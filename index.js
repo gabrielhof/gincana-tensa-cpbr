@@ -1,11 +1,34 @@
 var Twitter = require("twitter");
 
-var twitterClient = new Twitter({
-	consumer_key: "cWUDFIZa4OPfIi4qHNQYnxGiC",
-	consumer_secret: "ShIXhpQCvmF1ethQ5BiHRSyrjtkf6XrRVGp51K1AqoGv1yO0KY",
-	access_token_key: "129619411-SdxW8D7WfcjZDbDcQMRcQyvFRp11GlQFTnkiC8nT",
-	access_token_secret: "WK6OZB99FYoUuQdDipMLWqtJBAQYB9pJCN7PBJlpAnfz5"
-});
+var currentApiIndex = 0;
+var apiKeys = [
+	{
+		consumer_key: "cWUDFIZa4OPfIi4qHNQYnxGiC",
+		consumer_secret: "ShIXhpQCvmF1ethQ5BiHRSyrjtkf6XrRVGp51K1AqoGv1yO0KY",
+		access_token_key: "129619411-SdxW8D7WfcjZDbDcQMRcQyvFRp11GlQFTnkiC8nT",
+		access_token_secret: "WK6OZB99FYoUuQdDipMLWqtJBAQYB9pJCN7PBJlpAnfz5"
+	},
+	{
+		consumer_key: "7cEm5fyC1Ga12KCbJuICJ2Rsr",
+		consumer_secret: "XShHzfzPrpYM0hasp6FAeHiImBPNV8Dc5RWK2sKjiQ0PRzjdsZ",
+		access_token_key: "129619411-SeYVnFQp76KKw1KkjHjxnHuKBZCQmSO7yu4fI1y6",
+		access_token_secret: "bKejTuRSRIRAPRp5cWtIS7oyWX5CE9s0reRkfMM6VXdrX"
+	},
+	{
+		consumer_key: "9xwk3lBowaPTAb0ObH9qARKHS",
+		consumer_secret: "yoWjfqKnIjkEDxz9lYJW9tp4zEEHZF6mFYzTCaaojYBohFbMg8",
+		access_token_key: "129619411-9cbXB8GCHUOiuyZJfgpsEpjeOJo5mi7x0i1D8xZB",
+		access_token_secret: "AGrARrwqc0CUe7iWenCsiEClH157TYla0DzXtps1IGpbw"
+	},
+	{
+		consumer_key: "9xwk3lBowaPTAb0ObH9qARKHS",
+		consumer_secret: "yoWjfqKnIjkEDxz9lYJW9tp4zEEHZF6mFYzTCaaojYBohFbMg8",
+		access_token_key: "129619411-9cbXB8GCHUOiuyZJfgpsEpjeOJo5mi7x0i1D8xZB",
+		access_token_secret: "AGrARrwqc0CUe7iWenCsiEClH157TYla0DzXtps1IGpbw"
+	}
+];
+
+var twitterClient = null;
 
 var apiCalls = {
 	usersShow: 0,
@@ -100,11 +123,8 @@ function getUserWhoShouldBeFollowedData(userIndex, finishCallback) {
 		return;
 	}
 
-	if (apiCalls.usersShow > 180) {
-		setTimeout(function() {
-			console.log("Limite de consultas para a API de dados de usuários atingida.\nAguarde 180 minutos...");
-			getUserWhoShouldBeFollowedData(userIndex, finishCallback);
-		}, 180*60*1000);
+	if (!twitterClient || apiCalls.usersShow > 180) {
+		twitterClient = getNewTwitterConnection();
 	}
 
 	apiCalls.usersShow++;
@@ -155,11 +175,10 @@ function checkParticipant(participantIndex) {
 function checkIfuserFollowsEveryone(participantData, finishCallback) {
 	var sourceUser = participantData.username;
 
-	if (apiCalls.friendsIds > 15) {
-		setTimeout(function() {
-			console.log("Limite de consultas para a API de seguidos atingida.\nAguarde 15 minutos...");
-			getUserWhoShouldBeFollowedData(userIndex, finishCallback);
-		}, 15*60*1000);
+	console.log(apiCalls.friendsIds);
+
+	if (!twitterClient || apiCalls.friendsIds >= 15) {
+		twitterClient = getNewTwitterConnection();
 	}
 
 	apiCalls.friendsIds++;
@@ -189,6 +208,19 @@ function checkIfuserFollowsEveryone(participantData, finishCallback) {
 		}
 
 		finishCallback();
+	});
+}
+
+function getNewTwitterConnection() {
+	currentApiIndex++;
+
+	var currentApi = apiKeys[currentApiIndex];
+
+	return new Twitter({
+		consumer_key: currentApi.consumer_key,
+		consumer_secret: currentApi.consumer_secret,
+		access_token_key: currentApi.access_token_key,
+		access_token_secret: currentApi.access_token_secret
 	});
 }
 
