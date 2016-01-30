@@ -1,0 +1,14 @@
+{
+  "name": "gincana_equipe_tenso",
+  "version": "1.0.0",
+  "description": "App para validar contas de usuário participantes da equipe tenso.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "twitter": "^1.2.5"
+  }
+}
