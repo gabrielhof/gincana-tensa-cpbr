@@ -36,7 +36,7 @@ var listOfUsersWhoShouldBeFollowed = [
 	"UniversoHarley",
 	"SyFyBR",
 	"MiBrasil",
-	"Nutrieduc",
+	"nutrieducapp",
 	"HeyAppBrasil ",
 	"nuuvem",
 	"jorgemaia",
