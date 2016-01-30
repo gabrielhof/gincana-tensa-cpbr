@@ -7,12 +7,56 @@ var twitterClient = new Twitter({
 	access_token_secret: "WK6OZB99FYoUuQdDipMLWqtJBAQYB9pJCN7PBJlpAnfz5"
 });
 
-var sourceUser = process.argv[2];
+var apiCalls = {
+	usersShow: 0,
+	friendsIds: 0
+};
 
-if (!sourceUser) {
-	console.log("Por favor, informe o twitter de um participante.");
-	return;
-}
+var listOfParticipants = [
+	"mlcastanheira",
+	"Nina_choi",
+	"DarcHoly",
+	"guiiiseiti",
+	"digosf",
+	"jascovski",
+	"Nohander_",
+	"mlcastanheira",
+	"arthurpenido",
+	"G_Mocellin",
+	"laurinhapqna",
+	"adailn",
+	"sondanieru",
+	"laurinhapqna",
+	"Deby_chan",
+	"Eduardo_Scrt",
+	"aldirjr",
+	"sousandrei",
+	"nick_barreto",
+	"welbert_bone",
+	"_llucasn",
+	"_FerreiraJP",
+	"canguru_alado",
+	"MissTornill",
+	"laurinhapqna",
+	"RidrigoPanda",
+	"TayroneMarques",
+	"julia_sramos",
+	"yoo_catalano",
+	"joaovitorduarte",
+	"SabrinaFavarin",
+	"luceliamoradei",
+	"nilohumano ",
+	"Caiobroth",
+	"sr_Wolf",
+	"VALMIR2008",
+	"GutoFalc20",
+	"Edu_joliper",
+	"owyeajaeh",
+	"JundiaiFlavio",
+	"fernando_tetu"
+];
+
+var participantsFlags = {};
 
 var listOfUsersWhoShouldBeFollowed = [
 	"EquipeTenso",
@@ -46,38 +90,108 @@ var listOfUsersWhoShouldBeFollowed = [
 	"MadPixelStudios"
 ];
 
-var followingEveryone = true;
+var usersWhoShouldBeFollowedData = {};
 
-function checkIfuserFollows(targetUserIndex) {
-	if (!listOfUsersWhoShouldBeFollowed[targetUserIndex]) {
-		if (followingEveryone) {
-			console.log("O participante @" + sourceUser + " segue todo mundo");	
-		}
+function getUserWhoShouldBeFollowedData(userIndex, finishCallback) {
+	var targetUser = listOfUsersWhoShouldBeFollowed[userIndex];
 
+	if (!targetUser) {
+		finishCallback(usersWhoShouldBeFollowedData);
 		return;
 	}
 
-	var targetUser = listOfUsersWhoShouldBeFollowed[targetUserIndex];
+	if (apiCalls.usersShow > 180) {
+		setTimeout(function() {
+			console.log("Limite de consultas para a API de dados de usuários atingida.\nAguarde 180 minutos...");
+			getUserWhoShouldBeFollowedData(userIndex, finishCallback);
+		}, 180*60*1000);
+	}
 
-	twitterClient.get("friendships/show", {
-		source_screen_name: sourceUser.trim(),
-		target_screen_name: targetUser.trim()
+	apiCalls.usersShow++;
+
+	twitterClient.get("users/show", {
+		screen_name: targetUser.trim(),
 	}, function(error, response) {
 		if (error) {
-			console.log("Deu ruim ao consultar se o participante @" + sourceUser + " segue @" + targetUser);
+			console.log("Deu ruim ao consultar os dados (ID) de @" + targetUser);
 			console.log(error);
 			return;
 		}
-	
-		if (!response.relationship.source.following) {
-			followingEveryone = false;
-			console.log("O participante @" + sourceUser + " não segue @" + targetUser);
-		}
 
-		checkIfuserFollows(targetUserIndex+1);
+		usersWhoShouldBeFollowedData[targetUser] = response;
+	});
+
+	getUserWhoShouldBeFollowedData(userIndex+1, finishCallback);
+};
+
+function checkParticipant(participantIndex) {
+	var sourceUser = listOfParticipants[participantIndex];
+	var sourceUserData = null;
+
+	if (!sourceUser){
+		return;
+	}
+
+	if (!participantsFlags[sourceUser]) {
+		sourceUserData = {
+			username: sourceUser,
+			started: false,
+		};
+
+		participantsFlags[sourceUser] = sourceUserData;
+	} else {
+		sourceUserData = participantsFlags[sourceUser];
+	}
+
+	if (!sourceUserData.started) {
+		console.log("\n\n@" + sourceUser);
+	}
+
+	checkIfuserFollowsEveryone(sourceUserData, function() {
+		checkParticipant(participantIndex+1);
 	});
 }
 
-checkIfuserFollows(0);
+function checkIfuserFollowsEveryone(participantData, finishCallback) {
+	var sourceUser = participantData.username;
 
+	if (apiCalls.friendsIds > 15) {
+		setTimeout(function() {
+			console.log("Limite de consultas para a API de seguidos atingida.\nAguarde 15 minutos...");
+			getUserWhoShouldBeFollowedData(userIndex, finishCallback);
+		}, 15*60*1000);
+	}
 
+	apiCalls.friendsIds++;
+
+	twitterClient.get("friends/ids", {
+		screen_name: sourceUser.trim()
+	}, function(error, response) {
+		if (error) {
+			console.log("Deu ruim ao consultar se o participante @" + sourceUser + " todo mundo.");
+			console.log(error);
+			return;
+		}
+
+		var followingEveryone = true;
+
+		for (sponsorIndex in usersWhoShouldBeFollowedData) {
+			var sponsor = usersWhoShouldBeFollowedData[sponsorIndex];
+
+			if (response.ids.indexOf(sponsor.id) < 0) {
+				followingEveryone = false;
+				console.log("O participante @" + sourceUser + " não segue @" + sponsor.screen_name);
+			}
+		}
+	
+		if (followingEveryone) {
+			console.log("O participante @" + sourceUser + " segue todo mundo");
+		}
+
+		finishCallback();
+	});
+}
+
+getUserWhoShouldBeFollowedData(0, function() {
+	checkParticipant(0);
+});
